@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<title>노래방</title>
+<style>
+  body {
+    font-family: 'Pretendard', sans-serif;
+    background-color: #f8f8f8;
+    color: #2a2628;
+    text-align: center;
+    padding: 50px;
+    max-width: 700px;
+    margin: auto;
+  }
+  h1 {
+    color: #008ae3;
+    font-size: 2em;
+    margin-bottom: 20px;
+  }
+  input, select, button {
+    font-size: 1em;
+    padding: 8px 12px;
+    margin: 6px 0;
+    border: 2px solid #008ae3;
+    border-radius: 6px;
+  }
+  #startBtn, .actionBtn {
+    background-color: #008ae3;
+    color: white;
+    border: none;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+  #startBtn:hover, .actionBtn:hover {
+    background-color: #006bb5;
+  }
+  #prevLyrics, #nextLyrics {
+    font-size: 1em;
+    color: #a0a7a5;
+    margin: 5px 0;
+    min-height: 1.5em;
+    user-select: none;
+    line-height: 1.6em; /* 줄 간격 통일 */
+  }
+  #lyrics {
+    font-size: 1.4em;
+    margin: 10px 0 30px;
+    font-weight: bold;
+    color: #2a2628;
+    line-height: 1.6em; /* 줄 간격 통일 */
+    min-height: 2.4em; /* 가사 영역 높이 일정 */
+  }
+  input#typing {
+    width: 90%;
+    padding: 12px;
+    border: 2px solid #008ae3;
+  }
+  #result {
+    margin-top: 30px;
+    font-size: 1.6em;
+    font-weight: bold;
+    color: #2a2628;
+  }
+  #ment {
+    font-size: 1.2em;
+    margin-top: 10px;
+    color: #2a2628;
+  }
+  #actions {
+    margin-top: 20px;
+  }
+  #shareText {
+    margin-top: 10px;
+    font-size: 0.9em;
+    color: #666;
+  }
+  #screenshotArea {
+    display: inline-block;
+    background: #fff;
+    padding: 20px;
+    border: 2px dashed #008ae3;
+    border-radius: 10px;
+    margin-top: 20px;
+    user-select: none;
+  }
+  #loading {
+    font-size: 1.5em;
+    color: #008ae3;
+    display: none;
+  }
+  #prevLyrics, #nextLyrics {
+  font-size: 1em;
+  color: #a0a7a5;
+  margin: 2px 0 5px 0; /* 위쪽 간격 줄이고, 아래쪽 간격도 줄임 */
+  min-height: 1.5em;
+  user-select: none;
+  line-height: 1.4em; /* 줄 간격 살짝 좁게 */
+}
+#lyrics {
+  font-size: 1.4em;
+  margin: 10px 0 12px 0; /* 아래쪽 간격을 조금만 줌 */
+  font-weight: bold;
+  color: #2a2628;
+  line-height: 1.6em;
+  min-height: 2.4em;
+}
+
+</style>
+</head>
+<body>
+
+<h1>🎤 노래방</h1>
+
+<label for="nicknameInput">닉네임 입력:</label><br />
+<input type="text" id="nicknameInput" placeholder="닉네임을 입력하세요" maxlength="15" /><br />
+
+<select id="songSelect" aria-label="노래 선택">
+  <option value="0">페퍼톤스 - 샤인</option>
+  <option value="1">윤하 - 포인트 니모</option>
+  <option value="2">정우 - 나에게서 당신에게</option>
+  <option value="3">기현 - Youth</option>
+  <option value="4">잔나비 - 작정명 청-춘!</option>
+  <option value="5">달담 - 졸업</option>
+  <option value="6">빨래(뮤지컬) - 슬플 땐 빨래를 해</option>
+</select><br />
+<button id="startBtn">▶️ 시작하기</button>
+
+<div id="prevLyrics"></div>
+<div id="lyrics">노래를 선택하고 시작하기를 눌러주세요</div>
+<div id="nextLyrics"></div>
+
+<input type="text" id="typing" placeholder="가사를 입력하세요" autocomplete="off" disabled />
+
+<div id="screenshotArea">
+  <p id="result">점수: --점</p>
+  <p id="ment"></p>
+</div>
+
+<p id="loading">🎰 점수 계산 중...</p>
+
+<div id="actions">
+  <button class="actionBtn" onclick="startGame()">🔁 다시 시작</button>
+  <button class="actionBtn" onclick="saveScreenshot()">📸 스샷 저장</button>
+  <button class="actionBtn" onclick="shareScore()">📢 공유하기</button>
+  <p id="shareText"></p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script>
+  const songs = [
+    {
+      title: "페퍼톤스 - 샤인",
+      lyrics: [
+        "때로 내 전부를 걸고 진심으로 부딪히지 않는다면",
+        "어디가 끝인지 알 수는 없겠지",
+        "부끄러움을 뚫고 무리 밖으로 나서지 않는다면",
+        "더 넓은 세상을 볼 순 없을 거야"
+      ]
+    },
+    {
+      title: "윤하 - 포인트 니모",
+      lyrics: [
+        "세상의 기쁨을 죄다 누린 것 같은 기분이었지",
+        "한켠에 피어나던 불안함과 싸워 이기면서도",
+        "어디까지 멀리 날아오르고 싶었던 걸까",
+        "그땐 그게 정답이었어"
+      ]
+    },
+    {
+      title: "정우 - 나에게서 당신에게",
+      lyrics: [
+        "나는 구름의 강으로 가노니",
+        "못다 한 말은 햇살에 띄워주세요",
+        "남은 말은 바람에 속삭이세요",
+        "나를 한 번만 더 달에 데려다줘"
+      ]
+    },
+    {
+      title: "기현 - Youth",
+      lyrics: [
+        "난 가끔 그리울 것 같아 어리석었던",
+        "그래서 더 달리고 달렸던 날들",
+        "푸르고 또 푸르던 모습이",
+        "새빨갛게 춤추고 뛰던 가슴도"
+      ]
+    },
+    {
+      title: "잔나비 - 작정명 청-춘!",
+      lyrics: [
+        "어른이 된 오늘 내게 세상이란 곳",
+        "어릴 적 그리던 꿈속 전쟁터구나",
+        "그 속에서 나는 다시 영웅이 되려",
+        "선포한다 작전명 청춘"
+      ]
+    },
+    {
+      title: "달담 - 졸업",
+      lyrics: [
+        "푸르던 하늘 아래 아이들과",
+        "꿈을 꾼 의자 위에 초록 연서",
+        "이곳을 떠나가는 사랑이여",
+        "청춘이 그리우면 내게 오라"
+      ]
+    },
+    {
+      title: "빨래(뮤지컬) - 슬플 땐 빨래를 해",
+      lyrics: [
+        "빨래가 바람에 제 몸을 맡기는 것처럼",
+        "인생도 바람에 맡기는 거야",
+        "시간이 흘러흘러 빨래가 마르는 것처럼",
+        "슬픈 네 눈물도 마를 거야",
+        "자 힘을 내"
+      ]
+    }
+  ];
+
+  const mentMap = [
+    { max: 30, text: "🤯 손가락 꺾였나요? 다시 하시죠" },
+    { max: 60, text: "😐 평범 그 자체... 도전은 계속된다!" },
+    { max: 80, text: "✨ 오! 제법인데요?" },
+    { max: 95, text: "🔥 당신 혹시 타자왕?!" },
+    { max: 101, text: "👑 전설이다... 왕중왕..." }
+  ];
+
+  let currentSongIndex = 0;
+  let currentLine = 0;
+
+  const prevEl = document.getElementById("prevLyrics");
+  const lyricEl = document.getElementById("lyrics");
+  const nextEl = document.getElementById("nextLyrics");
+  const inputEl = document.getElementById("typing");
+  const resultEl = document.getElementById("result");
+  const mentEl = document.getElementById("ment");
+  const loadingEl = document.getElementById("loading");
+  const shareTextEl = document.getElementById("shareText");
+  const songSelectEl = document.getElementById("songSelect");
+  const startBtn = document.getElementById("startBtn");
+  const nicknameInput = document.getElementById("nicknameInput");
+
+  songSelectEl.addEventListener("change", () => {
+    currentSongIndex = Number(songSelectEl.value);
+    lyricEl.textContent = "노래를 선택하고 시작하기를 눌러주세요";
+    prevEl.textContent = "";
+    nextEl.textContent = "";
+    inputEl.value = "";
+    inputEl.disabled = true;
+    resultEl.textContent = "점수: --점";
+    mentEl.textContent = "";
+    shareTextEl.textContent = "";
+    loadingEl.style.display = "none";
+  });
+
+  startBtn.addEventListener("click", () => {
+    if (nicknameInput.value.trim() === "") {
+      alert("닉네임을 입력해주세요!");
+      nicknameInput.focus();
+      return;
+    }
+    startGame();
+  });
+
+  function updateLyricsPreview() {
+    const lyrics = songs[currentSongIndex].lyrics;
+    prevEl.textContent = currentLine > 0 ? lyrics[currentLine - 1] : "";
+    lyricEl.textContent = lyrics[currentLine];
+    nextEl.textContent = currentLine < lyrics.length - 1 ? lyrics[currentLine + 1] : "";
+  }
+
+  function startGame() {
+    currentLine = 0;
+    inputEl.disabled = false;
+    inputEl.value = "";
+    resultEl.textContent = "점수: --점";
+    mentEl.textContent = "";
+    shareTextEl.textContent = "";
+    loadingEl.style.display = "none";
+    updateLyricsPreview();
+    inputEl.focus();
+  }
+
+  // 점수 랜덤 분포를 80 이상 확률 낮추기
+  function getRandomScore() {
+    const r = Math.random();
+    if (r < 0.6) return Math.floor(Math.random() * 60); // 0~59 (60%)
+    else if (r < 0.9) return Math.floor(60 + Math.random() * 20); // 60~79 (30%)
+    else return Math.floor(80 + Math.random() * 21); // 80~100 (10%)
+  }
+
+  function getMent(score) {
+    return mentMap.find(m => score <= m.max).text;
+  }
+
+  inputEl.addEventListener("input", () => {
+    const input = inputEl.value;
+    const lyrics = songs[currentSongIndex].lyrics;
+    const target = lyrics[currentLine];
+    if (input === target) {
+      currentLine++;
+      if (currentLine < lyrics.length) {
+        updateLyricsPreview();
+        inputEl.value = "";
+      } else {
+        inputEl.disabled = true;
+        showRollingScore();
+      }
+    }
+  });
+
+  function showRollingScore() {
+    loadingEl.style.display = "block";
+    resultEl.textContent = "점수: 🎲🎲🎲";
+    mentEl.textContent = "";
+
+    let count = 0;
+    const roll = setInterval(() => {
+      resultEl.textContent = `점수: ${Math.floor(Math.random() * 101)}점`;
+      count++;
+      if (count >= 10) {
+        clearInterval(roll);
+        const score = getRandomScore();
+        const nickname = nicknameInput.value.trim();
+        resultEl.textContent = `${nickname}님의 점수는... ${score}점!`;
+        mentEl.textContent = getMent(score);
+        loadingEl.style.display = "none";
+      }
+    }, 100);
+  }
+
+  function saveScreenshot() {
+    html2canvas(document.getElementById("screenshotArea")).then(canvas => {
+      const link = document.createElement("a");
+      link.download = "shine_score.png";
+      link.href = canvas.toDataURL();
+      link.click();
+    });
+  }
+
+  function shareScore() {
+    const nickname = nicknameInput.value.trim();
+    const text = `${nickname}님의 점수는... ${resultEl.textContent.split('...')[1]}\n${mentEl.textContent}\n(노래방)`;
+    navigator.clipboard.writeText(text).then(() => {
+      shareTextEl.textContent = "📋 점수가 클립보드에 복사되었어요! 친구에게 붙여넣기 Ctrl+V";
+    });
+  }
+
+  songSelectEl.value = "0";
+  inputEl.disabled = true;
+</script>
+</body>
+</html>
